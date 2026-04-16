@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hangman Game</title>
+
+<style>
+body {
+  font-family: 'Segoe UI', sans-serif;
+  background: linear-gradient(135deg, #74ebd5, #acb6e5);
+  margin: 0;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.container {
+  background: white;
+  padding: 30px;
+  border-radius: 20px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+  text-align: center;
+  width: 90%;
+  max-width: 600px;
+}
+
+#word {
+  font-size: 2.5em;
+  letter-spacing: 12px;
+  margin: 20px 0;
+}
+
+#letters {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+}
+
+#letters button {
+  padding: 10px;
+  border-radius: 8px;
+  border: none;
+  background: #3498db;
+  color: white;
+  cursor: pointer;
+}
+
+#letters button:disabled {
+  background: #ccc;
+}
+
+/* SVG Hangman */
+.gallows {
+  width: 200px;
+  margin-top: 20px;
+}
+
+.frame {
+  stroke: #2c3e50;
+  stroke-width: 4;
+}
+
+.part {
+  stroke: #e74c3c;
+  stroke-width: 4;
+  stroke-linecap: round;
+  opacity: 0;
+  transform: translateY(-10px);
+  transition: 0.4s;
+}
+
+.part.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+#status {
+  margin-top: 15px;
+  font-weight: bold;
+}
+
+#restart {
+  margin-top: 20px;
+  padding: 10px 20px;
+  border-radius: 10px;
+  border: none;
+  background: #2ecc71;
+  color: white;
+  cursor: pointer;
+}
+</style>
+</head>
+
+<body>
+<div class="container">
+  <h1>Hangman</h1>
+
+  <div id="word"></div>
+  <div id="letters"></div>
+
+  <svg viewBox="0 0 200 250" class="gallows">
+    <!-- Frame -->
+    <line x1="10" y1="240" x2="190" y2="240" class="frame"/>
+    <line x1="50" y1="240" x2="50" y2="20" class="frame"/>
+    <line x1="50" y1="20" x2="130" y2="20" class="frame"/>
+    <line x1="130" y1="20" x2="130" y2="50" class="frame"/>
+
+    <!-- Parts -->
+    <circle cx="130" cy="70" r="20" class="part" id="head"/>
+    <line x1="130" y1="90" x2="130" y2="150" class="part" id="body"/>
+    <line x1="130" y1="110" x2="100" y2="130" class="part" id="arm1"/>
+    <line x1="130" y1="110" x2="160" y2="130" class="part" id="arm2"/>
+    <line x1="130" y1="150" x2="100" y2="190" class="part" id="leg1"/>
+    <line x1="130" y1="150" x2="160" y2="190" class="part" id="leg2"/>
+  </svg>
+
+  <div id="status"></div>
+  <button id="restart">Restart Game</button>
+</div>
+
+<script>
+const words = [
+  "javascript","hangman","computer","programming",
+  "developer","keyboard","internet","function"
+];
+
+let chosenWord = "";
+let guessedLetters = [];
+let wrongGuesses = 0;
+
+const parts = ["head","body","arm1","arm2","leg1","leg2"];
+
+function startGame() {
+  chosenWord = words[Math.floor(Math.random()*words.length)];
+  guessedLetters = [];
+  wrongGuesses = 0;
+
+  document.getElementById("status").textContent = "";
+
+  // RESET animation
+  document.querySelectorAll(".part").forEach(p => p.classList.remove("show"));
+
+  createButtons();
+  updateWord();
+}
+
+function createButtons() {
+  const lettersDiv = document.getElementById("letters");
+  lettersDiv.innerHTML = "";
+
+  for (let i=65;i<=90;i++) {
+    const l = String.fromCharCode(i).toLowerCase();
+    const btn = document.createElement("button");
+    btn.textContent = l;
+    btn.onclick = () => guess(l, btn);
+    lettersDiv.appendChild(btn);
+  }
+}
+
+function guess(letter, btn) {
+  btn.disabled = true;
+  guessedLetters.push(letter);
+
+  if (chosenWord.includes(letter)) {
+    updateWord();
+    checkWin();
+  } else {
+    wrongGuesses++;
+    showPart();
+    checkLose();
+  }
+}
+
+function showPart() {
+  if (wrongGuesses <= parts.length) {
+    document.getElementById(parts[wrongGuesses-1]).classList.add("show");
+  }
+}
+
+function updateWord() {
+  document.getElementById("word").textContent =
+    chosenWord.split("")
+    .map(l => guessedLetters.includes(l) ? l : "_")
+    .join(" ");
+}
+
+function checkWin() {
+  if (chosenWord.split("").every(l => guessedLetters.includes(l))) {
+    document.getElementById("status").textContent = "You win! 🎉";
+    disableAll();
+  }
+}
+
+function checkLose() {
+  if (wrongGuesses >= parts.length) {
+    document.getElementById("status").textContent =
+      "You lost! Word: " + chosenWord;
+    disableAll();
+  }
+}
+
+function disableAll() {
+  document.querySelectorAll("#letters button")
+    .forEach(b => b.disabled = true);
+}
+
+document.getElementById("restart").onclick = startGame;
+
+startGame();
+</script>
+</body>
+</html>
